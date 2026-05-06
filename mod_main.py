@@ -32,6 +32,7 @@ class ModuleMain(PluginModuleBase):
             'use_alive_m3u': 'False',
             'epg_updated_time': '',
             'alive_m3uall_url': ToolUtil.make_apikey_url(f"/alive/api/m3uall"),
+            'custom_priority': 'WAVVE, TVING, SPOTV, KT, LG, SK, DAUM, NAVER',
             # 'match_m3u_epg': 'False',
         }
 
