@@ -1,4 +1,3 @@
-
 import os
 import subprocess
 import json
@@ -29,7 +28,7 @@ logger = P.logger
 
 urls = []
 providers = ['KT', 'LG', 'SK', 'DAUM', 'NAVER', 'WAVVE', 'TVING', 'SPOTV']
-priority = ['WAVVE', 'TVING', 'SPOTV', 'KT', 'LG', 'SK', 'DAUM', 'NAVER']
+# priority 리스트는 DB에서 동적으로 가져오도록 수정되어 삭제되었습니다.
 
         
 class M3uParser:
@@ -188,6 +187,22 @@ def print_log(line):
 class MYEPG:
 
     @classmethod
+    def get_priority(cls):
+        # DB에 저장된 사용자의 우선순위 값을 가져옵니다.
+        priority_str = ModelSetting.get('custom_priority')
+        if priority_str:
+            # 쉼표(,) 기준으로 나누고 공백을 제거하여 대문자 리스트로 만듭니다.
+            current_priority = [p.strip().upper() for p in priority_str.split(',') if p.strip()]
+        else:
+            current_priority = ['WAVVE', 'TVING', 'SPOTV', 'KT', 'LG', 'SK', 'DAUM', 'NAVER']
+        
+        # WAVVE 차단 옵션이 켜져 있으면 리스트에서 WAVVE를 뺍니다.
+        if ModelSetting.get_bool('block_wavve') and 'WAVVE' in current_priority:
+            current_priority.remove('WAVVE')
+            
+        return current_priority
+
+    @classmethod
     def epg_update_script(cls):
         try:
             logger.info('epg_update_script start()')
@@ -231,13 +246,11 @@ class MYEPG:
                     epg2xml_json['WAVVE']['HTTP_PROXY'] = None
                     epg2xml_json['WAVVE']['MY_CHANNELS'] = []
                     if 'WAVVE' in providers: providers.remove('WAVVE')
-                    if 'WAVVE' in priority: priority.remove('WAVVE')
                 else:
                     epg2xml_json['WAVVE']['ENABLED'] =  True                            
                     epg2xml_json['WAVVE']['HTTP_PROXY'] = proxy if (proxy := get_wavve_proxy()) != '' else None
                     epg2xml_json['WAVVE']['MY_CHANNELS'] = []
                     if 'WAVVE' not in providers: providers.insert(5, 'WAVVE')
-                    if 'WAVVE' not in priority: priority.insert(0, 'WAVVE')
 
             save_json(epg2xml_path, epg2xml_json)
 
@@ -277,7 +290,12 @@ class MYEPG:
                 m3u_channels = list(dict.fromkeys(m3u_channels))   
                 # logger.info(m3u_channels)
 
-                for p in priority:
+                # 동적으로 설정된 우선순위를 가져와서 매칭 진행
+                current_priority = cls.get_priority()
+                for p in current_priority:
+                    # 안전장치: 혹시 입력한 이름이 channel_json에 없으면 건너뛰기
+                    if p not in channel_json: continue 
+                    
                     for channel in channel_json[p]['CHANNELS']:
                         for channel_name in m3u_channels:
                             if channel['Name'] == channel_name:
@@ -300,7 +318,11 @@ class MYEPG:
     @classmethod
     def add_ids_to_missing_channel(cls, key, value, epg2xml_list, channel_list):
         try: 
-            for p in priority:
+            current_priority = cls.get_priority()
+            for p in current_priority:
+                # 안전장치
+                if p not in channel_list: continue 
+                
                 for channel in channel_list[p]['CHANNELS']:
                     if channel['Name'] == value:        # EBS2, KBS1, KBS2
                         channel['Id'] = key             # EBS 2, 1TV, 2TV
