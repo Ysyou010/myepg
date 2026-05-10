@@ -34,6 +34,7 @@
       ]) }}
       {{ macros.setting_input_text('alive_m3uall_url', 'ALive m3uall url', value=arg['alive_m3uall_url']) }}
       {{ macros.setting_input_text('custom_priority', 'EPG 매칭 우선순위', value=arg['custom_priority'], desc=['원하시는 EPG 제공자 탐색 순서를 쉼표(,)로 구분하여 입력하세요.', '입력 예시: KT, LG, SK, WAVVE, TVING, SPOTV, DAUM, NAVER']) }}
+      {{ macros.setting_input_text('epg_fetch_limit', 'EPG 수집 기간 (일)', value=arg['epg_fetch_limit'], desc=['EPG 정보를 며칠 치 가져올지 일(Day) 단위로 설정합니다.', '기본값은 2이며, 값을 너무 크게(예: 7 이상) 설정하면 생성 속도가 매우 느려지거나 서버에서 차단될 수 있습니다.']) }}
       {{ macros.m_hr() }}
 
       <div id="use_alive_m3u_div" class="collapse">
@@ -63,28 +64,41 @@
 </form>
 
 <script type="text/javascript">
+document.addEventListener("DOMContentLoaded", function() {
+  // 파이썬 문법(reverse=true) 오류 수정 및 jQuery($) 의존성을 Vanilla JS로 교체
+  if (typeof use_collapse === 'function') {
+    use_collapse("use_alive_m3u", true);
+  }
 
+  var aliveM3u = document.getElementById('use_alive_m3u');
+  if (aliveM3u) {
+    aliveM3u.addEventListener('change', function() {
+      if (typeof use_collapse === 'function') {
+        use_collapse('use_alive_m3u', true);
+      }
+    });
+  }
 
-$(document).ready(function(){
-  use_collapse("use_alive_m3u", reverse=true)
-});
+  document.body.addEventListener('click', function(e) {
+    if (e.target.closest('#delete_setting_file_btn')) {
+      e.preventDefault();
+      if (typeof globalSendCommand === 'function') {
+        globalSendCommand('delete_setting_file', null, null, null, function(ret){
+          var timeElem = document.getElementById('epg_updated_time');
+          if (timeElem) timeElem.innerHTML = '만든 시간 : ';
+        });
+      }
+    }
 
-
-$('#use_alive_m3u').change(function() {use_collapse('use_alive_m3u', reverse=true);});
-
-
-$("body").on('click', '#delete_setting_file_btn', function(e){
-  e.preventDefault();
-  globalSendCommand('delete_setting_file', null, null, null, function(ret){
-    $('#epg_updated_time').html(`만든 시간 : `);
-  });
-});
-
-
-$("body").on('click', '#make_epg_btn', function(e){
-  e.preventDefault();
-  globalSendCommand('make_epg', null, null, null, function(ret){
-    $('#epg_updated_time').html(`만든 시간 : ${ret.updated_time}`);
+    if (e.target.closest('#make_epg_btn')) {
+      e.preventDefault();
+      if (typeof globalSendCommand === 'function') {
+        globalSendCommand('make_epg', null, null, null, function(ret){
+          var timeElem = document.getElementById('epg_updated_time');
+          if (timeElem) timeElem.innerHTML = '만든 시간 : ' + ret.updated_time;
+        });
+      }
+    }
   });
 });
 </script>
