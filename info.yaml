@@ -1,5 +1,5 @@
 title: "MY EPG"
-version: "1.0.1"
+version: "1.0.2"
 package_name: "myepg"
 developer: "include"
 description: "EPG API 플러그인"
