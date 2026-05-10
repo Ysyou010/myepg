@@ -14,9 +14,10 @@
 <form id='setting' name='setting'>
 <div class="tab-content" id="nav-tabContent">
     {{ macros.m_tab_content_start('normal', true) }}
-      <!-- {{ macros.info_text_go('api_epg', 'EPG', value=arg['api_epg']) }} -->
       {{ macros.info_text_go('api_epgall', 'EPGALL', value=arg['api_epgall']) }}
-      {{ macros.info_text_and_buttons('epg_updated_time', '', [['make_epg_btn', '다시 만들기']], value='만든 시간 : ' + arg['epg_updated_time'], desc=None) }}
+      
+      {{ macros.info_text_and_buttons('epg_updated_time', '', [['make_epg_btn', '다시 만들기']], value='만든 시간 : ' + arg['epg_updated_time'] + ' (크기: ' + arg['epg_file_size'] + ')', desc=None) }}
+      
       {{ macros.m_hr() }}
 
       {{ macros.setting_checkbox('block_wavve', 'WAVVE 요청 차단', value=arg['block_wavve'], 
@@ -48,9 +49,6 @@
       {{ macros.setting_checkbox('SPOTV', 'SPOTV', value=arg['SPOTV']) }}
       {{ macros.m_hr() }}
       </div>
-
-      <!-- {{ macros.setting_checkbox('match_m3u_epg', 'm3u 와 epg 채널 매치', value=arg['match_m3u_epg'], desc=['experimental']) }}
-      {{ macros.m_hr() }} -->
       
       {{ macros.setting_buttons([['delete_setting_file_btn', '삭제']], left='EPG2XML 설정 파일 삭제', desc=['file 폴더 삭제 ( Channel.json / epg2xml.json / xmltv.xml )'] ) }}
 
@@ -65,7 +63,6 @@
 
 <script type="text/javascript">
 document.addEventListener("DOMContentLoaded", function() {
-  // 파이썬 문법(reverse=true) 오류 수정 및 jQuery($) 의존성을 Vanilla JS로 교체
   if (typeof use_collapse === 'function') {
     use_collapse("use_alive_m3u", true);
   }
@@ -85,7 +82,8 @@ document.addEventListener("DOMContentLoaded", function() {
       if (typeof globalSendCommand === 'function') {
         globalSendCommand('delete_setting_file', null, null, null, function(ret){
           var timeElem = document.getElementById('epg_updated_time');
-          if (timeElem) timeElem.innerHTML = '만든 시간 : ';
+          // 삭제 후 파일 크기를 '파일 없음'으로 업데이트
+          if (timeElem) timeElem.innerHTML = '만든 시간 :  (크기: 파일 없음)';
         });
       }
     }
@@ -95,7 +93,8 @@ document.addEventListener("DOMContentLoaded", function() {
       if (typeof globalSendCommand === 'function') {
         globalSendCommand('make_epg', null, null, null, function(ret){
           var timeElem = document.getElementById('epg_updated_time');
-          if (timeElem) timeElem.innerHTML = '만든 시간 : ' + ret.updated_time;
+          // 생성 완료 후 서버에서 넘어온 파일 크기 동적 업데이트
+          if (timeElem) timeElem.innerHTML = '만든 시간 : ' + ret.updated_time + ' (크기: ' + ret.file_size + ')';
         });
       }
     }
