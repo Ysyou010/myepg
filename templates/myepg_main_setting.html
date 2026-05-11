@@ -40,8 +40,8 @@
       {{ macros.setting_input_text('epg_fetch_limit', 'EPG 수집 기간 (일)', value=arg['epg_fetch_limit'], desc=['EPG 정보를 며칠 치 가져올지 일(Day) 단위로 설정합니다.', '기본값은 2이며, 값을 너무 크게(예: 7 이상) 설정하면 생성 속도가 매우 느려지거나 서버에서 차단될 수 있습니다.']) }}
       {{ macros.m_hr() }}
 
-      <!-- 제공자 선택 영역 -->
-      <div id="use_alive_m3u_div">
+      <!-- 제공자 선택 영역 (class="collapse" 복구) -->
+      <div id="use_alive_m3u_div" class="collapse">
       {{ macros.setting_checkbox('KT', 'KT', value=arg['KT']) }}
       {{ macros.setting_checkbox('LG', 'LG', value=arg['LG']) }}
       {{ macros.setting_checkbox('SK', 'SK', value=arg['SK']) }}
@@ -52,9 +52,6 @@
       {{ macros.setting_checkbox('SPOTV', 'SPOTV', value=arg['SPOTV']) }}
       {{ macros.m_hr() }}
       </div>
-
-      <!-- {{ macros.setting_checkbox('match_m3u_epg', 'm3u 와 epg 채널 매치', value=arg['match_m3u_epg'], desc=['experimental']) }}
-      {{ macros.m_hr() }} -->
       
       {{ macros.setting_buttons([['delete_setting_file_btn', '삭제']], left='EPG2XML 설정 파일 삭제', desc=['file 폴더 삭제 ( Channel.json / epg2xml.json / xmltv.xml )'] ) }}
 
@@ -68,51 +65,29 @@
 </form>
 
 <script type="text/javascript">
-document.addEventListener("DOMContentLoaded", function() {
-  
-  // 1. 체크박스 상태에 따라 기존 제공자 메뉴 영역을 강제로 숨기거나 보여줍니다.
-  var useAliveM3u = document.getElementById('use_alive_m3u');
-  var providerDiv = document.getElementById('use_alive_m3u_div');
+$(document).ready(function(){
+  // 프레임워크 내장 함수 정상 호출 (자바스크립트 문법 적용)
+  use_collapse("use_alive_m3u", true);
+});
 
-  function toggleProviderMenu() {
-    if (useAliveM3u && providerDiv) {
-      if (useAliveM3u.checked) {
-        // ON: ALive m3u 사용 -> 개별 제공자 선택 메뉴 숨김
-        providerDiv.style.display = 'none';
-      } else {
-        // OFF: 기존 방식 사용 -> 개별 제공자 선택 메뉴 표시
-        providerDiv.style.display = 'block';
-      }
-    }
-  }
+// 체크박스 상태 변경 시 메뉴 토글
+$('#use_alive_m3u').change(function() {
+  use_collapse('use_alive_m3u', true);
+});
 
-  // 초기 접속 시 한번 실행하여 상태를 맞추고, 체크박스를 클릭할 때마다 작동하게 연결합니다.
-  if (useAliveM3u) {
-    toggleProviderMenu();
-    useAliveM3u.addEventListener('change', toggleProviderMenu);
-  }
+// 설정 파일 삭제 버튼
+$("body").on('click', '#delete_setting_file_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('delete_setting_file', null, null, null, function(ret){
+    $('#epg_updated_time').html(`만든 시간 :  (크기: 파일 없음)`);
+  });
+});
 
-  // 2. 버튼 클릭 이벤트 (파일 삭제 및 다시 만들기)
-  document.body.addEventListener('click', function(e) {
-    if (e.target.closest('#delete_setting_file_btn')) {
-      e.preventDefault();
-      if (typeof globalSendCommand === 'function') {
-        globalSendCommand('delete_setting_file', null, null, null, function(ret){
-          var timeElem = document.getElementById('epg_updated_time');
-          if (timeElem) timeElem.innerHTML = '만든 시간 :  (크기: 파일 없음)';
-        });
-      }
-    }
-
-    if (e.target.closest('#make_epg_btn')) {
-      e.preventDefault();
-      if (typeof globalSendCommand === 'function') {
-        globalSendCommand('make_epg', null, null, null, function(ret){
-          var timeElem = document.getElementById('epg_updated_time');
-          if (timeElem) timeElem.innerHTML = '만든 시간 : ' + ret.updated_time + ' (크기: ' + ret.file_size + ')';
-        });
-      }
-    }
+// EPG 다시 만들기 버튼
+$("body").on('click', '#make_epg_btn', function(e){
+  e.preventDefault();
+  globalSendCommand('make_epg', null, null, null, function(ret){
+    $('#epg_updated_time').html(`만든 시간 : ${ret.updated_time} (크기: ${ret.file_size})`);
   });
 });
 </script>
